@@ -13,3 +13,9 @@ $GLOBALS['BE_MOD']['devtools']['typort'] = array
     'import'     => array('HeimrichHannot\Typort\ModuleTyport', 'generate'),
     'icon'       => 'system/modules/typort/assets/typort.png'
 );
+
+/**
+ * Models
+ */
+$GLOBALS['TL_MODELS']['tt_news'] = 'HeimrichHannot\Typort\TypoNewsModel';
+$GLOBALS['TL_MODELS']['sys_refindex'] = 'HeimrichHannot\Typort\TypoRefIndexModel';

@@ -38,16 +38,19 @@ class ModuleTyport extends \BackendModule
 		// Create files
 		if (\Input::post('FORM_SUBMIT') == 'tl_typort')
 		{
-			$objModule = $this->Database->prepare("SELECT * FROM tl_typort WHERE id=?")
-							  ->limit(1)
-							  ->execute($this->objDc->id);
+			$objModel = TyportModel::findByPk($this->objDc->id);
 
-			if ($objModule->numRows < 1)
+			if ($objModel === null)
 			{
 				return;
 			}
 
-            $importer = new Importer($objModule);
+            switch($objModel->type)
+            {
+                case 'tt_news':
+                    $importer = new NewsImporter($objModel);
+                break;
+            }
 
             if($importer->run())
             {
@@ -64,7 +67,7 @@ class ModuleTyport extends \BackendModule
 		$this->Template->selectAll = $GLOBALS['TL_LANG']['MSC']['selectAll'];
 		$this->Template->button = $GLOBALS['TL_LANG']['MSC']['backBT'];
 		$this->Template->message = \Message::generate();
-		$this->Template->submit = specialchars($GLOBALS['TL_LANG']['tl_typort']['make'][0]);
+		$this->Template->submit = specialchars($GLOBALS['TL_LANG']['tl_typort']['import'][0]);
 		$this->Template->headline = sprintf($GLOBALS['TL_LANG']['tl_typort']['headline'], \Input::get('id'));
 		$this->Template->explain = $GLOBALS['TL_LANG']['tl_typort']['make'][1];
 		$this->Template->label = $GLOBALS['TL_LANG']['tl_typort']['label'];

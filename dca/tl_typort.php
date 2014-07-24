@@ -33,7 +33,8 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
 		'label' => array
 		(
 			'fields'                  => array('title', 'type'),
-			'format'                  => '%s <span style="color:#b3b3b3; padding-left:3px;">[%s]</span>'
+            'format'                  => '%s <span style="color:#b3b3b3; padding-left:3px;">[%s]</span>',
+            'label_callback'          => array('tl_typort', 'addDate'),
 		),
 		'global_operations' => array
 		(
@@ -86,7 +87,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
 	(
 		'__selector__'                => array('type'),
 		'default'                     => '{title_legend},title,type',
-        'tt_news'                     => '{title_legend},title,type;{config_legend},pid,start,end,folder',
+        'tt_news'                     => '{title_legend},title,type;{config_legend},pid,start,end,folder;{news_legend},newsArchive',
 	),
 
 	// Subpalettes
@@ -154,6 +155,14 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
             'inputType'               => 'fileTree',
             'eval'                    => array('files'=>false, 'fieldType'=>'radio'),
             'sql'                     => "binary(16) NULL"
+        ),
+        'newsArchive' => array
+        (
+            'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['newsArchive'],
+            'inputType'               => 'select',
+            'eval'                    => array('mandatory'=>true, 'submitOnChange'=>true),
+            'foreignKey'              => 'tl_news_archive.title',
+            'sql'                     => "int(10) unsigned NULL"
         )
 	)
 );
@@ -168,4 +177,35 @@ class tl_typort extends Backend
 
         return $objArchives === null ? array() : $objArchives->fetchEach('pid');
     }
+
+
+    public function addDate($row, $label)
+    {
+
+        if($row['start'] || $row['end'])
+        {
+            $label .= '&nbsp;<strong>[';
+
+            if($row['start'])
+            {
+                $label .= $GLOBALS['TL_LANG']['tl_typort']['start'][0] . ': ' . \Date::parse($GLOBALS['TL_CONFIG']['datimFormat'], $row['start']);
+
+                if($row['end'])
+                {
+                    $label .= '&nbsp;-&nbsp;';
+                }
+            }
+
+            if($row['end'])
+            {
+                $label .= $GLOBALS['TL_LANG']['tl_typort']['end'][0] . ': ' . \Date::parse($GLOBALS['TL_CONFIG']['datimFormat'], $row['end']);
+            }
+
+            $label .= ']</strong>';
+        }
+
+        return $label;
+    }
+
+
 }
