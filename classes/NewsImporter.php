@@ -5,127 +5,159 @@ namespace HeimrichHannot\Typort;
 
 class NewsImporter extends Importer
 {
-    protected static $strTypoTable = 'tt_news';
+	protected static $strTypoTable = 'tt_news';
 
-    protected static $strTable = 'tl_news';
+	protected static $strTable = 'tl_news';
 
-    protected function getFieldsMapping()
-    {
-        $arrMap = array
-        (
-            'tstamp'                    => 'tstamp',
-            'hidden'                    => '!published',
-            'datetime'                  => 'date,time',
-            'title'                     => 'headline',
-            'short'                     => 'teaser'
-        );
+	protected function getFieldsMapping()
+	{
+		$arrMap = array
+		(
+			'tstamp'   => 'tstamp',
+			'hidden'   => '!published',
+			'datetime' => 'date,time',
+			'title'    => 'headline',
+			'short'    => 'teaser'
+		);
 
-        return $arrMap;
-    }
+		return $arrMap;
+	}
 
-    protected function runAfterSaving(&$objItem, $objTypoItem)
-    {
-        $objItem->pid = $this->newsArchive;
-        $objItem->alias = $this->generateAlias($objItem->headline, $objItem);
+	protected function runAfterSaving(&$objItem, $objTypoItem)
+	{
+		$objItem->pid      = $this->newsArchive;
+		$objItem->alias    = $this->generateAlias($objItem->headline, $objItem);
+		$objItem->source   = 'default';
+		$objItem->floating = 'above';
 
-        $this->createContentElements($objItem, $objTypoItem);
-        $this->createEnclosures($objItem, $objTypoItem);
-        $objItem->teaser = "<p>" . strip_tags($objItem->teaser) . "</p>";
+		$this->createContentElements($objItem, $objTypoItem);
+		$this->createEnclosures($objItem, $objTypoItem);
 
-        $objItem->save();
-    }
+		// news_categories module support
+		if (in_array('news_categories', \Config::getInstance()->getActiveModules())) {
+			$this->setCategories($objItem, $objTypoItem);
+		}
 
-    protected function createEnclosures(&$objItem, $objTypoItem)
-    {
-        if($this->folder === null)
-        {
-            return false;
-        }
+		$objItem->teaser = "<p>" . strip_tags($objItem->teaser) . "</p>";
 
-        $objRefs = TypoRefIndexModel::findByRecUidsAndTableAndField(array($objTypoItem->uid), static::$strTypoTable, 'news_files');
+		$objItem->save();
+	}
 
-        if($objRefs === null)
-        {
-            return false;
-        }
+	protected function setCategories(&$objItem, $objTypoItem)
+	{
+		$arrCatTypo   = deserialize($this->catTypo);
+		$arrCatContao = deserialize($this->catContao);
 
-        $objFolder = \FilesModel::findByUuid($this->folder);
+		if(empty($arrCatContao) || empty($arrCatTypo)) return false;
 
-        if($objFolder === null)
-        {
-            return false;
-        }
+		$arrCatTypoIds = array_values($arrCatTypo);
+		$arrCatContaoIds = array_values($arrCatContao);
 
-        $arrEnclosure = array();
+		$objItemCategories = Database::getInstance()->prepare('SELECT * FROM tt_news_cat_mm WHERE uid_local = ? ORDER BY sorting')->execute($objTypoItem->uid);
 
-        while($objRefs->next())
-        {
-            if(!file_exists(TYPO3_ROOT . '/' . $objRefs->ref_string))
-            {
-                continue;
-            }
+		if ($objItemCategories->count() < 1) return false;
 
-            $objFile = new \File($objFolder->path . '/' . basename($objRefs->ref_string));
-            $objFile->write(file_get_contents(TYPO3_ROOT . '/' . $objRefs->ref_string));
-            $objFile->close();
-            $objModel = $objFile->getModel();
-            $arrEnclosure[] = $objModel->uuid;
-        }
+		$arrCategories = array();
 
-        if(!empty($arrEnclosure))
-        {
-            $objItem->addEnclosure = true;
-            $objItem->enclosure = $arrEnclosure;
-        }
-    }
+		while ($objItemCategories->next())
+		{
+			$idxTypo = array_search($objItemCategories->uid_foreign, $arrCatTypoIds);
 
-    protected function createContentElements(&$objItem, $objTypoItem)
-    {
-        if($objTypoItem->bodytext)
-        {
-            // need to wrap <p> around text for contao
-            $tidyConfig = array
-            (
-                'enclose-text' => true
-            );
+			if($idxTypo === false || !isset($arrCatContao[$idxTypo])) continue;
 
-            $bodyText = '<!DOCTYPE html><head><title></title></head><body>' . $objTypoItem->bodytext . '</body></html>';
+			$idxContao = $arrCatContaoIds[$idxTypo]; // set id by mapping
 
-            $tidy = new \tidy();
-            $tidy->parseString($bodyText, $tidyConfig, $GLOBALS['TL_CONFIG']['dbCharset']);
-            $body = $tidy->body();
+			$arrCategories[] = $idxContao;
+		}
 
-            $objContent = new \ContentModel();
-            $objContent->text = trim(str_replace(array('<body>', '</body>'), '', $body));
-            $objContent->ptable = static::$strTable;
-            $objContent->pid = $objItem->id;
-            $objContent->sorting = 16;
-            $objContent->tstamp = time();
-            $objContent->type = 'text';
-            $objContent->save();
-        }
-    }
+		$objItem->categories = serialize($arrCategories);
 
-    public function generateAlias($varValue, $objItem)
-    {
-        $t = static::$strTable;
+		return true;
+	}
 
-        $varValue = standardize(\String::restoreBasicEntities($varValue));
+	protected function createEnclosures(&$objItem, $objTypoItem)
+	{
+		if ($this->folder === null) {
+			return false;
+		}
 
-        $objAlias = \Database::getInstance()->prepare("SELECT id FROM $t WHERE alias=?")
-            ->execute($varValue);
+		$objRefs = TypoRefIndexModel::findByRecUidsAndTableAndField(array($objTypoItem->uid), static::$strTypoTable, 'news_files');
 
-        // Add ID to alias
-        if ($objAlias->numRows)
-        {
-            $varValue .= '-' . $objItem->id;
-        }
+		if ($objRefs === null) {
+			return false;
+		}
 
-        return $varValue;
-    }
+		$objFolder = \FilesModel::findByUuid($this->folder);
 
-    protected function createImportMessage($objItem)
-    {
-        \Message::addConfirmation('Successfully imported news: "' . $objItem->headline . '"');
-    }
+		if ($objFolder === null) {
+			return false;
+		}
+
+		$arrEnclosure = array();
+
+		while ($objRefs->next()) {
+			if (!file_exists(TYPO3_ROOT . '/' . $objRefs->ref_string)) {
+				continue;
+			}
+
+			$objFile = new \File($objFolder->path . '/' . basename($objRefs->ref_string));
+			$objFile->write(file_get_contents(TYPO3_ROOT . '/' . $objRefs->ref_string));
+			$objFile->close();
+			$objModel       = $objFile->getModel();
+			$arrEnclosure[] = $objModel->uuid;
+		}
+
+		if (!empty($arrEnclosure)) {
+			$objItem->addEnclosure = true;
+			$objItem->enclosure    = $arrEnclosure;
+		}
+	}
+
+	protected function createContentElements(&$objItem, $objTypoItem)
+	{
+		if ($objTypoItem->bodytext) {
+			// need to wrap <p> around text for contao
+			$tidyConfig = array
+			(
+				'enclose-text' => true
+			);
+
+			$bodyText = '<!DOCTYPE html><head><title></title></head><body>' . $objTypoItem->bodytext . '</body></html>';
+
+			$tidy = new \tidy();
+			$tidy->parseString($bodyText, $tidyConfig, $GLOBALS['TL_CONFIG']['dbCharset']);
+			$body = $tidy->body();
+
+			$objContent          = new \ContentModel();
+			$objContent->text    = trim(str_replace(array('<body>', '</body>'), '', $body));
+			$objContent->ptable  = static::$strTable;
+			$objContent->pid     = $objItem->id;
+			$objContent->sorting = 16;
+			$objContent->tstamp  = time();
+			$objContent->type    = 'text';
+			$objContent->save();
+		}
+	}
+
+	public function generateAlias($varValue, $objItem)
+	{
+		$t = static::$strTable;
+
+		$varValue = standardize(\String::restoreBasicEntities($varValue));
+
+		$objAlias = \Database::getInstance()->prepare("SELECT id FROM $t WHERE alias=?")
+			->execute($varValue);
+
+		// Add ID to alias
+		if ($objAlias->numRows) {
+			$varValue .= '-' . $objItem->id;
+		}
+
+		return $varValue;
+	}
+
+	protected function createImportMessage($objItem)
+	{
+		\Message::addConfirmation('Successfully imported news: "' . $objItem->headline . '"');
+	}
 }

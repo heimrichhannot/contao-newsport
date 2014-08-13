@@ -87,7 +87,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
 	(
 		'__selector__'                => array('type'),
 		'default'                     => '{title_legend},title,type',
-        'tt_news'                     => '{title_legend},title,type;{config_legend},pid,start,end,folder;{news_legend},newsArchive',
+        'tt_news'                     => '{title_legend},title,type;{config_legend},pid,start,end,folder;{news_legend},newsArchive;{category_legend},catTypo,catContao',
 	),
 
 	// Subpalettes
@@ -110,6 +110,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
 		(
 			'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['title'],
 			'search'                  => true,
+			'exclude'                 => true,
 			'inputType'               => 'text',
 			'eval'                    => array('mandatory'=>true, 'maxlength'=>64, 'tl_class'=>'w50'),
 			'sql'                     => "varchar(64) NOT NULL default ''"
@@ -118,6 +119,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
 		(
 			'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['type'],
 			'search'                  => true,
+			'exclude'                 => true,
 			'inputType'               => 'select',
             'default'                 => 'tt_news',
 			'eval'                    => array('mandatory'=>true, 'submitOnChange'=>true),
@@ -131,6 +133,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
         (
             'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['pid'],
 			'inputType'               => 'select',
+			'exclude'                 => true,
 			'eval'                    => array('mandatory'=>true, 'submitOnChange'=>true),
 			'options_callback'        => array('tl_typort', 'getPidsFromTable'),
 			'sql'                     => "varchar(64) NOT NULL default ''"
@@ -139,6 +142,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
         (
             'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['start'],
             'inputType'               => 'text',
+			'exclude'                 => true,
             'eval'                    => array('rgxp'=>'datim', 'tl_class'=>'w50', 'datepicker' => true),
             'sql'                     => "int(10) unsigned NULL"
         ),
@@ -146,6 +150,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
         (
             'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['end'],
             'inputType'               => 'text',
+			'exclude'                 => true,
             'eval'                    => array('rgxp'=>'datim', 'tl_class'=>'w50', 'datepicker' => true),
             'sql'                     => "int(10) unsigned NULL"
         ),
@@ -153,6 +158,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
         (
             'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['folder'],
             'inputType'               => 'fileTree',
+			'exclude'                 => true,
             'eval'                    => array('files'=>false, 'fieldType'=>'radio'),
             'sql'                     => "binary(16) NULL"
         ),
@@ -160,16 +166,70 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
         (
             'label'                   => &$GLOBALS['TL_LANG']['tl_typort']['newsArchive'],
             'inputType'               => 'select',
+			'exclude'                 => true,
             'eval'                    => array('mandatory'=>true, 'submitOnChange'=>true),
             'foreignKey'              => 'tl_news_archive.title',
             'sql'                     => "int(10) unsigned NULL"
-        )
+        ),
+		'catTypo' => array
+		(
+			'label'                   => &$GLOBALS['TL_LANG']['tl_member']['catTypo'],
+			'exclude'                 => true,
+			'inputType'               => 'checkboxWizard',
+			'eval'                    => array('multiple'=>true, 'tl_class' => 'w50'),
+			'options_callback'		  => array('tl_typort', 'getTypoCategories'),
+			'sql'                     => "blob NULL",
+		),
+		'catContao' => array
+		(
+			'label'                   => &$GLOBALS['TL_LANG']['tl_member']['catContao'],
+			'exclude'                 => true,
+			'inputType'               => 'checkboxWizard',
+			'eval'                    => array('multiple'=>true, 'tl_class' => 'w50'),
+			'options_callback'		  => array('tl_typort', 'getContaoCategories'),
+			'sql'                     => "blob NULL",
+		)
 	)
 );
 
 
 class tl_typort extends Backend
 {
+	public function getContaoCategories(DataContainer $dc)
+	{
+		$arrOptions = array();
+
+		if(!in_array('news_categories', \Config::getInstance()->getActiveModules())) return $arrOptions;
+
+		$objCategories = NewsCategories\NewsCategoryModel::findBy('published', 1);
+
+		if($objCategories === null) return $arrOptions;
+
+		while($objCategories->next())
+		{
+			$arrOptions[$objCategories->id] = $objCategories->title;
+		}
+
+		return $arrOptions;
+	}
+
+	public function getTypoCategories(DataContainer $dc)
+	{
+		$arrOptions = array();
+
+		if(!in_array('news_categories', \Config::getInstance()->getActiveModules())) return $arrOptions;
+
+		$objCategories = HeimrichHannot\Typort\Database::getInstance()->prepare('SELECT * FROM tt_news_cat WHERE deleted = 0 AND hidden=0')->execute();
+
+		if($objCategories->count() < 1) return $arrOptions;
+
+		while($objCategories->next())
+		{
+			$arrOptions[$objCategories->uid] = $objCategories->title;
+		}
+
+		return $arrOptions;
+	}
 
     public function getPidsFromTable(DataContainer $dc)
     {

@@ -6,6 +6,12 @@ abstract class TypoModel extends \Model
 {
 
     /**
+     * Primary key
+     * @var string
+     */
+    protected static $strPk = 'uid';
+
+    /**
      * Find records and return the model or model collection
      *
      * Supported options:
@@ -76,6 +82,7 @@ abstract class TypoModel extends \Model
         }
         else
         {
+            // TODO: collection contains always the same item
             return static::createCollectionFromDbResult($objResult, static::$strTable);
         }
     }

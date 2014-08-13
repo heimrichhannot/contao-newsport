@@ -55,12 +55,11 @@ abstract class Importer extends \Backend
 
         while($this->objItems->next())
         {
-            $objItem = $this->createObjectFromMapping($this->objItems->current(), $strClass);
+            $objItem = $this->createObjectFromMapping($this->objItems, $strClass);
             $this->createImportMessage($objItem);
-            break;
         }
 
-        return false;
+        return true;
     }
 
     protected function createObjectFromMapping($objTypoItem, $strClass)
@@ -115,6 +114,7 @@ abstract class Importer extends \Backend
         }
 
         $this->objItems = $strClass::findByPids(array($this->pid), $this->start, $this->end);
+
     }
 
     /**

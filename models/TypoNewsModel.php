@@ -20,7 +20,7 @@ class TypoNewsModel extends TypoModel
         $intStart = is_null($intStart) ? "NULL" : $intStart;
         $intEnd = is_null($intEnd) ? "NULL" : $intEnd;
 
-        $arrColumns[] = "($intStart IS NULL OR $t.datetime>=$intStart) AND ($intEnd IS NULL OR $t.datetime<=$intEnd)";
+        $arrColumns[] = "($intStart IS NULL OR $t.datetime>=$intStart) AND ($intEnd IS NULL OR $t.datetime<=$intEnd) AND deleted = 0";
 
         if (!isset($arrOptions['order']))
         {
