@@ -113,8 +113,7 @@ abstract class Importer extends \Backend
             return false;
         }
 
-        $this->objItems = $strClass::findByPids(array($this->pid), $this->start, $this->end);
-
+        $this->objItems = $strClass::findByPids(deserialize($this->pids, true), $this->start, $this->end);
     }
 
     /**

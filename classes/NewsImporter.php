@@ -48,9 +48,9 @@ class NewsImporter extends Importer
 		$arrCatTypo   = deserialize($this->catTypo);
 		$arrCatContao = deserialize($this->catContao);
 
-		if(empty($arrCatContao) || empty($arrCatTypo)) return false;
+		if (empty($arrCatContao) || empty($arrCatTypo)) return false;
 
-		$arrCatTypoIds = array_values($arrCatTypo);
+		$arrCatTypoIds   = array_values($arrCatTypo);
 		$arrCatContaoIds = array_values($arrCatContao);
 
 		$objItemCategories = Database::getInstance()->prepare('SELECT * FROM tt_news_cat_mm WHERE uid_local = ? ORDER BY sorting')->execute($objTypoItem->uid);
@@ -59,11 +59,10 @@ class NewsImporter extends Importer
 
 		$arrCategories = array();
 
-		while ($objItemCategories->next())
-		{
+		while ($objItemCategories->next()) {
 			$idxTypo = array_search($objItemCategories->uid_foreign, $arrCatTypoIds);
 
-			if($idxTypo === false || !isset($arrCatContao[$idxTypo])) continue;
+			if ($idxTypo === false || !isset($arrCatContao[$idxTypo])) continue;
 
 			$idxContao = $arrCatContaoIds[$idxTypo]; // set id by mapping
 
@@ -130,6 +129,8 @@ class NewsImporter extends Importer
 
 			$objContent          = new \ContentModel();
 			$objContent->text    = trim(str_replace(array('<body>', '</body>'), '', $body));
+			$objContent->text    = preg_replace("/<img[^>]+\>/i", "", $objContent->text); // strip images
+			$objContent->text    = preg_replace('!(\s|^)((https?://|www\.)+[a-z0-9_./?=&-]+)!i', ' <a href="http://$2" target="_blank">$2</a>', $objContent->text); // create links
 			$objContent->ptable  = static::$strTable;
 			$objContent->pid     = $objItem->id;
 			$objContent->sorting = 16;
