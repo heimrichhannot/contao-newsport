@@ -187,7 +187,7 @@ $GLOBALS['TL_DCA']['tl_typort'] = array
 			'eval'             => array('multiple' => true, 'tl_class' => 'w50'),
 			'options_callback' => array('tl_typort', 'getContaoCategories'),
 			'sql'              => "blob NULL",
-		)
+		),
 	)
 );
 
