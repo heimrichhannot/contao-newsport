@@ -2,7 +2,6 @@
 
 namespace HeimrichHannot\Typort;
 
-
 class NewsImporter extends Importer
 {
 	protected static $strTypoTable = 'tt_news';
@@ -65,6 +64,8 @@ class NewsImporter extends Importer
 			if ($idxTypo === false || !isset($arrCatContao[$idxTypo])) continue;
 
 			$idxContao = $arrCatContaoIds[$idxTypo]; // set id by mapping
+
+			\Database::getInstance()->prepare('INSERT INTO tl_news_categories (category_id, news_id) VALUES (?,?)')->execute($idxContao, $objItem->id);
 
 			$arrCategories[] = $idxContao;
 		}
@@ -143,12 +144,6 @@ class NewsImporter extends Importer
 			$objContent->text = preg_replace('!<b(.*?)>(.*?)</b>!i', '<strong>$2</strong>', $objContent->text);
 			// replace emails with inserttags
 			$objContent->text = preg_replace('/([A-Z0-9._%+-]+)@([A-Z0-9.-]+)\.([A-Z]{2,4})(\((.+?)\))?/i', "{{email::$1@$2.$3}}", $objContent->text);
-
-			ob_start();
-			print_r($objContent->text);
-			print "\n";
-			file_put_contents(TL_ROOT . '/debug.txt', ob_get_contents(), FILE_APPEND);
-			ob_end_clean();
 
 			$objContent->ptable  = static::$strTable;
 			$objContent->pid     = $objItem->id;
