@@ -1,10 +1,14 @@
 <?php
 
-namespace HeimrichHannot\Typort;
+namespace HeimrichHannot\Newsport;
+
+use Contao\Model\Collection;
 
 abstract class Importer extends \Backend
 {
     protected $objModel;
+
+    protected $objParentModel;
 
     protected $objItems;
 
@@ -12,9 +16,15 @@ abstract class Importer extends \Backend
 
     protected $arrMapping = array();
 
-    protected static $strTypoTable;
+    protected $arrNamedMapping = array();
 
     protected static $strTable;
+
+    protected $Database;
+
+    protected $arrDbSourceFields = array();
+
+    protected $arrDbTargetFields = array();
 
     public function __construct($objModel)
     {
@@ -30,7 +40,62 @@ abstract class Importer extends \Backend
         parent::__construct();
 
         $this->arrData = $objModel->row();
+        $this->objParentModel = NewsportModel::findByPk($this->objModel->pid);
+        $this->Database = Database::getInstance($this->objParentModel->row());
+        $this->arrDbSourceFields = $this->Database->listFields($this->dbTable);
+        $this->arrDbTargetFields = \Database::getInstance()->listFields(static::$strTable);
+
         $this->arrMapping = $this->getFieldsMapping();
+
+        $arrNamedMapping = $this->arrMapping;
+
+        // name fields
+        array_walk($arrNamedMapping, function(&$value, $index){
+            $value = $value . ' as ' . $index;
+        });
+
+        $this->arrNamedMapping = $arrNamedMapping;
+    }
+
+    protected function getFieldMappingDbValue($arrSourceConfig, $arrTargetConfig)
+    {
+        $t = $this->dbTable;
+
+        $strValue = $arrSourceConfig['name'];
+
+        switch($arrSourceConfig['type'])
+        {
+            case 'timestamp':
+                if($arrTargetConfig['type'] == 'int')
+                {
+                    $strValue = "UNIX_TIMESTAMP($t.$strValue)";
+                }
+            break;
+            default:
+                $strValue = $this->dbTable . '.' . $strValue;
+        }
+
+        return $strValue;
+    }
+
+    protected function getTargetDbConfig($strName)
+    {
+        foreach($this->arrDbTargetFields as $arrField)
+        {
+            if($strName == $arrField['name']) return $arrField;
+        }
+
+        return false;
+    }
+
+    protected function getSourceDbConfig($strName)
+    {
+        foreach($this->arrDbSourceFields as $arrField)
+        {
+            if($strName == $arrField['name']) return $arrField;
+        }
+
+        return false;
     }
 
     /**
@@ -62,20 +127,20 @@ abstract class Importer extends \Backend
         return true;
     }
 
-    protected function createObjectFromMapping($objTypoItem, $strClass)
+    protected function createObjectFromMapping($objSourceItem, $strClass)
     {
         $objItem = new $strClass();
 
-        foreach($this->arrMapping as $typo => $key)
+        foreach($this->arrMapping as $key => $col)
         {
-            $value = $objTypoItem->{$typo};
+            $value = $objSourceItem->{$key};
             $arrCreateAfterSaving = array();
             $this->setObjectValueFromMapping($objItem, $value, $key, $arrCreateAfterSaving);
             $objItem->save();
         }
 
         // do after item has been created,
-        $this->runAfterSaving($objItem, $objTypoItem);
+        $this->runAfterSaving($objItem, $objSourceItem);
 
         return $objItem;
     }
@@ -106,14 +171,30 @@ abstract class Importer extends \Backend
 
     protected function collectItems()
     {
-        $strClass = $GLOBALS['TL_MODELS'][static::$strTypoTable];
+        $t = $this->dbTable;
 
-        if (!class_exists($strClass))
+        $intStart = intval($this->start ? $this->start : 0);
+        $intEnd = intval($this->end ? $this->end : 2145913200);
+
+        $strQuery = "SELECT " . implode(', ', $this->arrNamedMapping) . " FROM $t";
+
+        $strDateCol = $this->arrMapping['date'];
+        $strQuery .= " WHERE (($strDateCol>=$intStart AND $strDateCol<=$intEnd) OR ($strDateCol>=$intStart AND $strDateCol<=$intEnd) OR ($strDateCol<=$intStart AND $strDateCol>=$intEnd))";
+
+        if($this->whereClause != '')
         {
-            return false;
+            $strQuery .= " AND " . $this->whereClause;
         }
 
-        $this->objItems = $strClass::findByPids(deserialize($this->pids, true), $this->start, $this->end);
+        ob_start();
+        print_r($strQuery);
+        print "\n";
+        file_put_contents(TL_ROOT . '/debug.txt', ob_get_contents(), FILE_APPEND);
+        ob_end_clean();
+
+        $objResult = $this->Database->prepare($strQuery)->execute();
+
+        $this->objItems = $objResult;
     }
 
     /**

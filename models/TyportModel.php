@@ -1,6 +1,6 @@
 <?php
 
-namespace HeimrichHannot\Typort;
+namespace HeimrichHannot\Newsport;
 
 class TyportModel extends \Model
 {

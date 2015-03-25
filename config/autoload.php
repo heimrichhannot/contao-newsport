@@ -3,9 +3,9 @@
 /**
  * Contao Open Source CMS
  *
- * Copyright (c) 2005-2014 Leo Feyer
+ * Copyright (c) 2005-2015 Leo Feyer
  *
- * @package Typort
+ * @package Newsport
  * @link    https://contao.org
  * @license http://www.gnu.org/licenses/lgpl-3.0.html LGPL
  */
@@ -26,18 +26,20 @@ ClassLoader::addNamespaces(array
 ClassLoader::addClasses(array
 (
 	// Models
-	'HeimrichHannot\Typort\TypoRefIndexModel' => 'system/modules/typort/models/TypoRefIndexModel.php',
-	'HeimrichHannot\Typort\TypoNewsModel'     => 'system/modules/typort/models/TypoNewsModel.php',
-	'HeimrichHannot\Typort\TyportModel'       => 'system/modules/typort/models/TyportModel.php',
+	'HeimrichHannot\Newsport\TypoRefIndexModel'   => 'system/modules/newsport/models/TypoRefIndexModel.php',
+	'HeimrichHannot\Newsport\NewsportConfigModel' => 'system/modules/newsport/models/NewsportConfigModel.php',
+	'HeimrichHannot\Newsport\NewsportModel'       => 'system/modules/newsport/models/NewsportModel.php',
+	'HeimrichHannot\Newsport\TypoNewsModel'       => 'system/modules/newsport/models/TypoNewsModel.php',
+	'HeimrichHannot\Newsport\TyportModel'         => 'system/modules/newsport/models/TyportModel.php',
 
 	// Modules
-	'HeimrichHannot\Typort\ModuleTyport'      => 'system/modules/typort/modules/ModuleTyport.php',
+	'HeimrichHannot\Newsport\ModuleNewsport'      => 'system/modules/newsport/modules/ModuleNewsport.php',
 
 	// Classes
-	'HeimrichHannot\Typort\Database'          => 'system/modules/typort/classes/Database.php',
-	'HeimrichHannot\Typort\Importer'          => 'system/modules/typort/classes/Importer.php',
-	'HeimrichHannot\Typort\TypoModel'         => 'system/modules/typort/classes/TypoModel.php',
-	'HeimrichHannot\Typort\NewsImporter'      => 'system/modules/typort/classes/NewsImporter.php',
+	'HeimrichHannot\Newsport\Database'            => 'system/modules/newsport/classes/Database.php',
+	'HeimrichHannot\Newsport\Importer'            => 'system/modules/newsport/classes/Importer.php',
+	'HeimrichHannot\Typort\TypoModel'             => 'system/modules/newsport/classes/TypoModel.php',
+	'HeimrichHannot\Newsport\NewsImporter'        => 'system/modules/newsport/classes/NewsImporter.php',
 ));
 
 
@@ -46,5 +48,5 @@ ClassLoader::addClasses(array
  */
 TemplateLoader::addFiles(array
 (
-	'dev_typort' => 'system/modules/typort/templates',
+	'dev_newsport' => 'system/modules/newsport/templates',
 ));

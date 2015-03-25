@@ -1,23 +1,30 @@
 <?php
 
-namespace HeimrichHannot\Typort;
+namespace HeimrichHannot\Newsport;
 
 class NewsImporter extends Importer
 {
-	protected static $strTypoTable = 'tt_news';
-
 	protected static $strTable = 'tl_news';
 
 	protected function getFieldsMapping()
 	{
-		$arrMap = array
-		(
-			'tstamp'   => 'tstamp',
-			'hidden'   => '!published',
-			'datetime' => 'date,time',
-			'title'    => 'headline',
-			'short'    => 'teaser'
-		);
+		$arrMap = array();
+
+		$this->dbFieldMapping = deserialize($this->dbFieldMapping, true);
+
+		foreach($this->dbFieldMapping as $arrConfig)
+		{
+			if($arrConfig['type'] == 'source')
+			{
+				$arrSrcDbConfig = $this->getSourceDbConfig($arrConfig['source']);
+				$arrTargetDbConfig = $this->getTargetDbConfig($arrConfig['target']);
+				$arrMap[$arrConfig['target']] = $this->getFieldMappingDbValue($arrSrcDbConfig, $arrTargetDbConfig);
+			}
+			else if($arrConfig['type'] == 'value' && !empty($arrConfig['value']))
+			{
+				$arrMap[$arrConfig['target']] = $arrConfig['value'];
+			}
+		}
 
 		return $arrMap;
 	}
@@ -25,7 +32,7 @@ class NewsImporter extends Importer
 	protected function runAfterSaving(&$objItem, $objTypoItem)
 	{
 		$objItem->pid      = $this->newsArchive;
-		$objItem->alias    = $this->generateAlias($objItem->headline, $objItem);
+		$objItem->alias    = $this->generateAlias($objItem->alias ? $objItem->alias : $objItem->headline, $objItem);
 		$objItem->source   = 'default';
 		$objItem->floating = 'above';
 
@@ -37,7 +44,7 @@ class NewsImporter extends Importer
 			$this->setCategories($objItem, $objTypoItem);
 		}
 
-		$objItem->teaser = "<p>" . strip_tags($objItem->teaser) . "</p>";
+//		$objItem->teaser = "<p>" . strip_tags($objItem->teaser) . "</p>";
 
 		$objItem->save();
 	}
@@ -77,39 +84,37 @@ class NewsImporter extends Importer
 
 	protected function createEnclosures(&$objItem, $objTypoItem)
 	{
-		if ($this->folder === null) {
+		if ($this->sourceDir === null || $this->targetDir === null) {
 			return false;
 		}
 
-		$objRefs = TypoRefIndexModel::findByRecUidsAndTableAndField(array($objTypoItem->uid), static::$strTypoTable, 'news_files');
+		$objSourceDir = \FilesModel::findByUuid($this->sourceDir);
 
-		if ($objRefs === null) {
-			return false;
-		}
+		if($objSourceDir === null) return false;
 
-		$objFolder = \FilesModel::findByUuid($this->folder);
+		$objTargetDir = \FilesModel::findByUuid($this->targetDir);
 
-		if ($objFolder === null) {
-			return false;
-		}
+		if($objTargetDir === null) return false;
 
-		$arrEnclosure = array();
+		$arrSource = deserialize($objItem->enclosure, true);
+		$arrTarget = array();
 
-		while ($objRefs->next()) {
-			if (!file_exists(TYPO3_ROOT . '/' . $objRefs->ref_string)) {
-				continue;
-			}
+		foreach($arrSource as $strFile)
+		{
+			$strRelFile = $objSourceDir->path . '/' . ltrim($strFile, '/');
 
-			$objFile = new \File($objFolder->path . '/' . basename($objRefs->ref_string));
-			$objFile->write(file_get_contents(TYPO3_ROOT . '/' . $objRefs->ref_string));
-			$objFile->close();
+			if(!file_exists(TL_ROOT . '/' . $strRelFile)) continue;
+
+			$objFile = new \File($strRelFile);
+			$objFile->copyTo($objTargetDir->path . '/' . $objFile->name);
+
 			$objModel       = $objFile->getModel();
-			$arrEnclosure[] = $objModel->uuid;
+			$arrTarget[] = $objModel->uuid;
 		}
 
-		if (!empty($arrEnclosure)) {
+		if (!empty($arrTarget)) {
 			$objItem->addEnclosure = true;
-			$objItem->enclosure    = $arrEnclosure;
+			$objItem->enclosure    = $arrTarget;
 		}
 	}
 

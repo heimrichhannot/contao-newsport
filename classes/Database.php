@@ -1,6 +1,6 @@
 <?php
 
-namespace HeimrichHannot\Typort;
+namespace HeimrichHannot\Newsport;
 
 abstract class Database extends \Database
 {
@@ -19,7 +19,7 @@ abstract class Database extends \Database
             'dbHost'     => \Config::get('dbHost'),
             'dbUser'     => \Config::get('dbUser'),
             'dbPass'     => \Config::get('dbPass'),
-            'dbDatabase' => TYPO3_DB,
+            'dbDatabase' => \Config::get('dbDatabase'),
             'dbPconnect' => \Config::get('dbPconnect'),
             'dbCharset'  => \Config::get('dbCharset'),
             'dbPort'     => \Config::get('dbPort'),

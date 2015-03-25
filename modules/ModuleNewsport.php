@@ -1,9 +1,9 @@
 <?php
 
-namespace HeimrichHannot\Typort;
+namespace HeimrichHannot\Newsport;
 
 
-class ModuleTyport extends \BackendModule
+class ModuleNewsport extends \BackendModule
 {
 
 	/**
@@ -16,7 +16,7 @@ class ModuleTyport extends \BackendModule
 	 * Template
 	 * @var string
 	 */
-	protected $strTemplate = 'dev_typort';
+	protected $strTemplate = 'dev_newsport';
 
 
 	/**
@@ -36,26 +36,22 @@ class ModuleTyport extends \BackendModule
 	protected function compile()
 	{
 		// Create files
-		if (\Input::post('FORM_SUBMIT') == 'tl_typort')
+		if (\Input::post('FORM_SUBMIT') == 'tl_newsport')
 		{
-			$objModel = TyportModel::findByPk($this->objDc->id);
+			$objModel = NewsportConfigModel::findByPk($this->objDc->id);
 
 			if ($objModel === null)
 			{
 				return;
 			}
 
-            switch($objModel->type)
-            {
-                case 'tt_news':
-                    $importer = new NewsImporter($objModel);
-                break;
-            }
+			$importer = new NewsImporter($objModel);
+
 
             if($importer->run())
             {
                 // Confirm and reload
-                \Message::addConfirmation($GLOBALS['TL_LANG']['tl_typort']['confirm']);
+                \Message::addConfirmation($GLOBALS['TL_LANG']['tl_newsport_config']['confirm']);
                 $this->reload();
             }
 		}
@@ -67,10 +63,10 @@ class ModuleTyport extends \BackendModule
 		$this->Template->selectAll = $GLOBALS['TL_LANG']['MSC']['selectAll'];
 		$this->Template->button = $GLOBALS['TL_LANG']['MSC']['backBT'];
 		$this->Template->message = \Message::generate();
-		$this->Template->submit = specialchars($GLOBALS['TL_LANG']['tl_typort']['import'][0]);
-		$this->Template->headline = sprintf($GLOBALS['TL_LANG']['tl_typort']['headline'], \Input::get('id'));
-		$this->Template->explain = $GLOBALS['TL_LANG']['tl_typort']['make'][1];
-		$this->Template->label = $GLOBALS['TL_LANG']['tl_typort']['label'];
+		$this->Template->submit = specialchars($GLOBALS['TL_LANG']['tl_newsport_config']['import'][0]);
+		$this->Template->headline = sprintf($GLOBALS['TL_LANG']['tl_newsport_config']['headline'], \Input::get('id'));
+		$this->Template->explain = $GLOBALS['TL_LANG']['tl_newsport_config']['make'][1];
+		$this->Template->label = $GLOBALS['TL_LANG']['tl_newsport_config']['label'];
 	}
 
 

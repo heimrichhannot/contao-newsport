@@ -3,4 +3,4 @@
 /**
  * Backend modules
  */
-$GLOBALS['TL_LANG']['MOD']['typort'] = array('Typort', 'Import database entities from TYPO3 to Contao.');
+$GLOBALS['TL_LANG']['MOD']['newsport'] = array('Newsport', 'Import news database entities from another Database into Contao.');
