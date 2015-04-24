@@ -1,0 +1,32 @@
+{
+    "name": "heimrichhannot/contao-newsport",
+    "description":"A backend only module, to migrate items from one database into tl_news (experts only).",
+    "keywords":["contao", "news", "import"],
+    "type": "contao-module",
+    "homepage":"https://github.com/heimrichhannot/contao-newsport",
+    "license":"LGPL-3.0+",
+    "authors":[
+        {
+            "name":"Heimrich & Hannot",
+            "email":"digitales@heimrich-hannot.de",
+            "homepage":"http://www.heimrich-hannot.de",
+            "role":"Developer"
+        }
+    ],
+    "support":{
+        "issues":"https://github.com/heimrichhannot/contao-newsport/issues"
+    },
+    "require": {
+        "contao/core": ">=3.3,<4-dev"
+    },
+    "autoload": {
+        "classmap": [""]
+    },
+    "extra": {
+        "contao": {
+            "sources": {
+                "": "system/modules/newsport"
+            }
+        }
+    }
+}
