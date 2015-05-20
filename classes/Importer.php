@@ -131,11 +131,18 @@ abstract class Importer extends \Backend
     {
         $objItem = new $strClass();
 
+		\Controller::loadDataContainer(static::$strTable);
+
+		$dca = $GLOBALS['TL_DCA'][static::$strTable];
+
         foreach($this->arrMapping as $key => $col)
         {
-            $value = $objSourceItem->{$key};
+            $value = $this->setValueByType($objSourceItem->{$key}, $dca['fields'][$key]);
             $arrCreateAfterSaving = array();
             $this->setObjectValueFromMapping($objItem, $value, $key, $arrCreateAfterSaving);
+
+			if($value === null) continue;
+
             $objItem->save();
         }
 
@@ -144,6 +151,49 @@ abstract class Importer extends \Backend
 
         return $objItem;
     }
+
+	protected function setValueByType($varValue, $arrData)
+	{
+		switch($arrData['inputType'])
+		{
+			case 'fileTree':
+				if($arrData['eval']['filesOnly'])
+				{
+					$varValue = $this->createSingleFile($varValue);
+				}
+
+				// TODO: multiple files
+			break;
+		}
+
+		return $varValue;
+	}
+
+	protected function createSingleFile($varValue)
+	{
+		if ($this->sourceDir === null || $this->targetDir === null || $varValue == '')
+		{
+			return false;
+		}
+
+		$objSourceDir = \FilesModel::findByUuid($this->sourceDir);
+
+		if($objSourceDir === null) return false;
+
+		$objTargetDir = \FilesModel::findByUuid($this->targetDir);
+
+		if($objTargetDir === null) return false;
+
+		$strRelFile = $objSourceDir->path . '/' . ltrim($varValue, '/');
+
+		if(is_dir(TL_ROOT . '/' . $strRelFile) || !file_exists(TL_ROOT . '/' . $strRelFile)) return null;
+
+		$objFile = new \File($strRelFile);
+		$objFile->copyTo($objTargetDir->path . '/' . $objFile->name);
+
+		$objModel       = $objFile->getModel();
+		return $objModel->uuid;
+	}
 
     protected function setObjectValueFromMapping(&$objItem, $value, $key)
     {
@@ -185,12 +235,6 @@ abstract class Importer extends \Backend
         {
             $strQuery .= " AND " . $this->whereClause;
         }
-
-        ob_start();
-        print_r($strQuery);
-        print "\n";
-        file_put_contents(TL_ROOT . '/debug.txt', ob_get_contents(), FILE_APPEND);
-        ob_end_clean();
 
         $objResult = $this->Database->prepare($strQuery)->execute();
 

@@ -92,7 +92,7 @@ $GLOBALS['TL_DCA']['tl_newsport_config'] = array
 	'palettes'    => array
 	(
 		'__selector__' => array('type'),
-		'default'      => '{title_legend},title,newsArchive;{config_legend},dbTable,dbFieldMapping,start,end,whereClause,sourceDir,targetDir',
+		'default'      => '{title_legend},title,newsArchive;{config_legend},dbTable,dbFieldMapping,start,end,whereClause,sourceDir,targetDir;{category_legend},catContao',
 		//		'tt_news'      => '{title_legend},title,table;{config_legend},pids,start,end,folder;{news_legend},newsArchive;{category_legend},catTypo,catContao',
 	),
 
@@ -249,24 +249,24 @@ $GLOBALS['TL_DCA']['tl_newsport_config'] = array
 			'foreignKey' => 'tl_news_archive.title',
 			'sql'        => "int(10) unsigned NULL"
 		),
-		//		'catTypo'     => array
-		//		(
-		//			'label'            => &$GLOBALS['TL_LANG']['tl_member']['catTypo'],
-		//			'exclude'          => true,
-		//			'inputType'        => 'checkboxWizard',
-		//			'eval'             => array('multiple' => true, 'tl_class' => 'w50'),
-		//			'options_callback' => array('tl_newsport_config', 'getTypoCategories'),
-		//			'sql'              => "blob NULL",
-		//		),
-		//		'catContao'   => array
-		//		(
-		//			'label'            => &$GLOBALS['TL_LANG']['tl_member']['catContao'],
-		//			'exclude'          => true,
-		//			'inputType'        => 'checkboxWizard',
-		//			'eval'             => array('multiple' => true, 'tl_class' => 'w50'),
-		//			'options_callback' => array('tl_newsport_config', 'getContaoCategories'),
-		//			'sql'              => "blob NULL",
-		//		),
+		'catTypo'     => array
+		(
+			'label'            => &$GLOBALS['TL_LANG']['tl_member']['catTypo'],
+			'exclude'          => true,
+			'inputType'        => 'checkboxWizard',
+			'eval'             => array('multiple' => true, 'tl_class' => 'w50'),
+			'options_callback' => array('tl_newsport_config', 'getTypoCategories'),
+			'sql'              => "blob NULL",
+		),
+		'catContao'   => array
+		(
+			'label'            => &$GLOBALS['TL_LANG']['tl_member']['catContao'],
+			'exclude'          => true,
+			'inputType'        => 'treePicker',
+			'foreignKey'       => 'tl_news_category.title',
+			'eval'             => array('multiple'=>true, 'fieldType'=>'checkbox', 'foreignTable'=>'tl_news_category', 'titleField'=>'title', 'searchField'=>'title', 'managerHref'=>'do=news&table=tl_news_category'),
+			'sql'              => "blob NULL",
+		),
 	)
 );
 
@@ -303,12 +303,15 @@ class tl_newsport_config extends \Backend
 
 		if (!is_array($arrFields) || empty($arrFields)) return $arrOptions;
 
+		$arrOptions['tl_content'] = &$GLOBALS['TL_LANG']['tl_newsport_config']['createNewContentElement'];
+
 		foreach ($arrFields as $arrField) {
 			if (in_array($arrField['type'], array('index'))) continue;
 			if ($arrField['name'] == 'pid') continue;
 
 			$arrOptions[$arrField['name']] = $arrField['name'] . ' [' . $arrField['origtype'] . ']';
 		}
+
 
 		return $arrOptions;
 	}
