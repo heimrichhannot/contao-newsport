@@ -216,7 +216,7 @@ abstract class Importer extends \Backend
             return $objItem;
         }
 
-        $objItem->$key = $value;
+        $objItem->{$key} = $value;
     }
 
     protected function collectItems()

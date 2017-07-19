@@ -71,7 +71,7 @@ class NewsImporter extends Importer
 	{
 		$t = static::$strTable;
 
-		$varValue = standardize(\String::restoreBasicEntities($varValue));
+		$varValue = standardize(\StringUtil::restoreBasicEntities($varValue));
 
 		$objAlias = \Database::getInstance()->prepare("SELECT id FROM $t WHERE alias=? AND id != ?")
 			->execute($varValue, $objItem->id);
@@ -152,7 +152,7 @@ class NewsImporter extends Importer
 		$dom->load($html);
 		foreach ($attribs as $attrib) {
 			foreach ($dom->find("*[$attrib]") as $e) {
-				$e->$attrib = null;
+				$e->{$attrib} = null;
 			}
 		}
 		$dom->load($dom->save());

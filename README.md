@@ -1,5 +1,3 @@
-@abandoned - use heimrichhannot/contao-entity_import instead.
-
 # Newsport
 
 A backend only module, to migrate items from one database into tl_news (experts only).
